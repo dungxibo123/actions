@@ -1,0 +1,24 @@
+name: TelegramNotifications
+
+
+on:
+  push:
+    branchs:
+      - "*"
+
+jobs:
+  display_branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Display current branch name
+        env:
+          SUPER_SECRET: ${{ secrets.TEST_TOKEN }}
+        run: | 
+
+          echo "The current branch is: ${{ github.ref_name }}"
+          echo "The token is: ${{ secrets.SUPER_SECRET }}"
+
+
