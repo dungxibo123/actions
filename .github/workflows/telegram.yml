@@ -22,12 +22,18 @@ on:
         default: 5619096601
     types: [opened, closed, reopened, synchronize]
   workflow_call:
+    secrets:
+      TELEGRAM_BOT_API:
+        type: string
+        required: true
+      CHAT_ID:
+        type: number
+        required: false
     inputs:
       chatId:
         type: number
         required: false
         default: 5619096601
-    secrets: inherit
 
 
 jobs:
