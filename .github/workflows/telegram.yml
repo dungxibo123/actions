@@ -150,16 +150,30 @@ jobs:
           
           echo "Sending to chat ID: $chatId"
           
-          # Send message with inline keyboard
+          # Create properly escaped JSON payload
+          MESSAGE_TEXT=$(printf '%s' '${{ needs.get_message.outputs.value }}' | jq -R -s .)
+          BUTTONS='${{ needs.get_message.outputs.buttons }}'
+          
+          # Create the complete JSON payload
+          PAYLOAD=$(jq -n \
+            --arg chat_id "$chatId" \
+            --argjson text "$MESSAGE_TEXT" \
+            --arg parse_mode "Markdown" \
+            --argjson is_private "${{ github.event.repository.private }}" \
+            --argjson inline_keyboard "$BUTTONS" \
+            '{
+              chat_id: $chat_id,
+              text: $text,
+              parse_mode: $parse_mode,
+              link_preview_options: {is_disabled: $is_private},
+              reply_markup: {inline_keyboard: $inline_keyboard}
+            }')
+          
+          echo "Final payload:"
+          echo "$PAYLOAD"
+          
+          # Send message with properly formatted JSON
           curl -X POST \
               -H 'Content-Type: application/json' \
-              -d "{
-                \"chat_id\": \"$chatId\",
-                \"text\": $(printf '%s' '${{ needs.get_message.outputs.value }}' | jq -R -s .),
-                \"parse_mode\": \"Markdown\",
-                \"link_preview_options\": {\"is_disabled\": ${{ github.event.repository.private }}},
-                \"reply_markup\": {
-                  \"inline_keyboard\": ${{ needs.get_message.outputs.buttons }}
-                }
-              }" \
+              -d "$PAYLOAD" \
               https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_API }}/sendMessage
