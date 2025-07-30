@@ -19,6 +19,6 @@ jobs:
         run: | 
 
           echo "The current branch is: ${{ github.ref_name }}"
-          echo "The token is: $SUPER_SECRET"
+          echo "The token is: ${{ secrets.TEST_TOKEN }}"
 
 
