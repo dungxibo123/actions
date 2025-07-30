@@ -21,7 +21,7 @@ jobs:
           export NOTIFICATION_STRING="test 1"
           curl -X POST \
               -H 'Content-Type: application/json' \
-              -d '{"chat_id": "5619096601", "text": "$NOTIFICATION_STRING"}' \
+              -d '{"chat_id": "5619096601", "text": "$env:NOTIFICATION_STRING"}' \
               https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_API }}/sendMessage 
 
 
