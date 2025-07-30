@@ -1,9 +1,8 @@
 name: TelegramNotifications
 
-
 on:
   push:
-    branchs:
+    branches:
       - "*"
 
 jobs:
@@ -21,23 +20,41 @@ jobs:
             export date=$(date '+%d/%m/%Y %H:%M:%S')
             export reponame=${{ github.repository }}
             export who=${{ github.triggering_actor }}
-            export event=$(echo ${{ github.event_name }} | tr '[:lower:]' '[:upper:]') 
-            echo -e "message=There is a **$event** on [$reponame](https://github.com/${{ github.repository }}), which is triggered by $who at $date" >> "$GITHUB_OUTPUT"
+            export event=$(echo ${{ github.event_name }} | tr '[:lower:]' '[:upper:]')
+            export branch=${GITHUB_REF#refs/heads/}
+            export commit_msg=$(git log -1 --pretty=format:'%s')
+            export commit_hash=$(git log -1 --pretty=format:'%h')
             
+            # Create multi-line message in a single variable
+            message="📢 *Repository Update Alert*
+            
+🔹 *Event:* $event
+🔹 *Repository:* [$reponame](https://github.com/${{ github.repository }})
+🔹 *Branch:* \`$branch\`
+🔹 *Triggered by:* @$who
+🔹 *Time:* $date
+🔹 *Commit:* \`$commit_hash\` - $commit_msg
 
-  display_branch:
+[View Changes](https://github.com/${{ github.repository }}/commit/${{ github.sha }})"
+            
+            # Use printf to handle multi-line properly and escape for GitHub Output
+            {
+              echo "message<<EOF"
+              printf "%s" "$message"
+              echo ""
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+
+  send_notification:
     needs: get_message
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Display current branch name
-        run: | 
+      - name: Send Telegram notification
+        run: |
+          echo "Sending message:"
           echo "${{ needs.get_message.outputs.value }}"
+          
           curl -X POST \
               -H 'Content-Type: application/json' \
-              -d '{"chat_id": "5619096601", "text": "${{ needs.get_message.outputs.value }}", "parse_mode": "MarkdownV2"}' \
-              https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_API }}/sendMessage 
-
-
+              -d "{\"chat_id\": \"5619096601\", \"text\": $(printf '%s' '${{ needs.get_message.outputs.value }}' | jq -R -s .), \"parse_mode\": \"Markdown\"}" \
+              https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_API }}/sendMessage
