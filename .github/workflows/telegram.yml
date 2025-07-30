@@ -39,6 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       value: ${{ steps.stringify.outputs.message }}
+      buttons: ${{ steps.stringify.outputs.buttons }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -68,7 +69,12 @@ jobs:
                 echo "🔹 *Time:* $date"
                 echo "🔹 *Commit:* \`$commit_hash\` - $commit_msg"
                 echo ""
-                echo "[View Changes](https://github.com/${{ github.repository }}/commit/${{ github.sha }})"
+                echo "EOF"
+              } >> "$GITHUB_OUTPUT"
+              {
+                echo "buttons<<EOF"
+                echo "[{\"text\": \"💬 View Changes\", \"url\": \"https://github.com/${{ github.repository }}/commit/${{ github.sha }}\"}, {\"text\": \"View repository\", \"url\": \"https://github.com/${{ github.repository }}\"}]"
+                echo ""
                 echo "EOF"
               } >> "$GITHUB_OUTPUT"
               
@@ -110,9 +116,36 @@ jobs:
                   echo "  • $line"
                 done
                 echo ""
-                echo "[💬 View Discussion]($pr_url)"
                 echo "EOF"
               } >> "$GITHUB_OUTPUT"
+              {
+                echo "buttons<<EOF"
+                echo "[{\"text\": \"💬 View Discussion\", \"url\": \"$pr_url\"}, {\"text\": \"View repository\", \"url\": \"https://github.com/${{ github.repository }}\"}]"
+                echo ""
+                echo "EOF"
+              } >> "$GITHUB_OUTPUT"
+
+#              {
+#                echo "buttons<<EOF"
+#                echo "🔄 *Pull Request ${pr_action^}*"
+#                echo ""
+#                echo "🔹 *PR #$pr_number:* $pr_title"
+#                echo "🔹 *Repository:* [$reponame](https://github.com/${{ github.repository }})"
+#                echo "🔹 *Author:* @$pr_author"
+#                echo "🔹 *Action:* ${pr_action^}"
+#                echo "🔹 *From:* \`$from_branch\` → \`$to_branch\`"
+#                echo "🔹 *Labels:* $pr_labels"
+#                echo "🔹 *Time:* $date"
+#                echo ""
+#                echo "📝 *Recent Commits:*"
+#                # Get recent commits from the PR
+#                git log --oneline ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} --max-count=5 | while read line; do
+#                  echo "  • $line"
+#                done
+#                echo ""
+#                echo "[💬 View Discussion]($pr_url)"
+#                echo "EOF"
+#              } >> "$GITHUB_OUTPUT"
             fi
   send_notification:
     needs: get_message
@@ -129,5 +162,5 @@ jobs:
           fi
           curl -X POST \
               -H 'Content-Type: application/json' \
-              -d "{\"chat_id\": \"$chatId\", \"text\": $(printf '%s' '${{ needs.get_message.outputs.value }}' | jq -R -s .), \"parse_mode\": \"Markdown\", \"link_preview_options\": {\"is_disabled\": ${{ github.event.repository.private }} }}" \
+              -d "{\"chat_id\": \"$chatId\", \"text\": $(printf '%s' '${{ needs.get_message.outputs.value }}' | jq -R -s .), \"parse_mode\": \"Markdown\", \"link_preview_options\": {\"is_disabled\": ${{ github.event.repository.private }} }, \"reply_markup\": {\"inline_keyboard\": ${{ needs.get_message.outputs.buttons }} } }" \
               https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_API }}/sendMessage
