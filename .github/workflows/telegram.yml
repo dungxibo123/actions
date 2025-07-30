@@ -15,7 +15,7 @@ jobs:
 
       - name: Display current branch name
         env:
-          SUPER_SECRET: ${{ secrets.TEST_TOKEN }}
+          SUPER_SECRET: "test"
         run: | 
 
           echo "The current branch is: ${{ github.ref_name }}"
