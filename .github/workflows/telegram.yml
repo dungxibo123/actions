@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       value: ${{ steps.set_output.outputs.message }}
-      test_value: ${{ steps.set_output.value_to_expose }}
+      test_value: "a"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
