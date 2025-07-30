@@ -7,9 +7,19 @@ on:
         - type: number
         - required: true
   push:
+    inputs:
+      chatId:
+        - type: number
+        - required: false
+        - default: 5619096601
     branches:
       - "*"
   pull_request:
+    inputs:
+      chatId:
+        - type: number
+        - required: false
+        - default: 5619096601
     types: [opened, closed, reopened, synchronize]
 
 jobs:
