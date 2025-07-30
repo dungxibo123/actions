@@ -7,26 +7,14 @@ on:
         type: number
         required: true
   push:
-    inputs:
-      chatId:
-        type: number
-        required: false
-        default: 5619096601
     branches:
       - "*"
   pull_request:
-    inputs:
-      chatId:
-        type: number
-        required: false
-        default: 5619096601
     types: [opened, closed, reopened, synchronize]
   workflow_call:
     secrets:
       TELEGRAM_BOT_API:
         required: true
-      CHAT_ID:
-        required: false
     inputs:
       chatId:
         type: number
@@ -60,18 +48,19 @@ jobs:
               echo "message<<EOF"
               echo "📢 *Repository Update Alert*"
               echo ""
-              echo "🔹 *Event:* $event"
-              echo "🔹 *Repository:* [$reponame](https://github.com/${{ github.repository }})"
-              echo "🔹 *Branch:* \`$branch\`"
-              echo "🔹 *Triggered by:* @$who"
-              echo "🔹 *Time:* $date"
-              echo "🔹 *Commit:* \`$commit_hash\` - $commit_msg"
-              echo ""
+              echo "⚡ *Event:* $event"
+              echo "📦 *Repository:* [$reponame](https://github.com/${{ github.repository }})"
+              echo "🌿 *Branch:* \`$branch\`"
+              echo "👤 *Triggered by:* @$who"
+              echo "⏰ *Time:* $date"
+              echo "💾 *Commit:* \`$commit_hash\` - $commit_msg"
               echo "EOF"
             } >> "$GITHUB_OUTPUT"
+            
+            # Create inline keyboard with proper structure
             {
               echo "buttons<<EOF"
-              echo "[{\"text\": \"💬 View Changes\", \"url\": \"https://github.com/${{ github.repository }}/commit/${{ github.sha }}\"}, {\"text\": \"View repository\", \"url\": \"https://github.com/${{ github.repository }}\"}]"
+              echo "[[{\"text\": \"🔍 View Changes\", \"url\": \"https://github.com/${{ github.repository }}/commit/${{ github.sha }}\"}, {\"text\": \"📦 Repository\", \"url\": \"https://github.com/${{ github.repository }}\"}]]"
               echo "EOF"
             } >> "$GITHUB_OUTPUT"
             
@@ -95,25 +84,46 @@ jobs:
               echo "message<<EOF"
               echo "🔄 *Pull Request ${pr_action^}*"
               echo ""
-              echo "🔹 *PR #$pr_number:* $pr_title"
-              echo "🔹 *Repository:* [$reponame](https://github.com/${{ github.repository }})"
-              echo "🔹 *Author:* @$pr_author"
-              echo "🔹 *Action:* ${pr_action^}"
-              echo "🔹 *From:* \`$from_branch\` → \`$to_branch\`"
-              echo "🔹 *Labels:* $pr_labels"
-              echo "🔹 *Time:* $date"
+              echo "📋 *PR #$pr_number:* $pr_title"
+              echo "📦 *Repository:* [$reponame](https://github.com/${{ github.repository }})"
+              echo "👤 *Author:* @$pr_author"
+              echo "🎯 *Action:* ${pr_action^}"
+              echo "🔀 *From:* \`$from_branch\` → \`$to_branch\`"
+              echo "🏷️ *Labels:* $pr_labels"
+              echo "⏰ *Time:* $date"
               echo ""
               echo "📝 *Recent Commits:*"
-              # Get recent commits from the PR
               git log --oneline ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} --max-count=5 | while read line; do
                 echo "  • $line"
               done
-              echo ""
               echo "EOF"
             } >> "$GITHUB_OUTPUT"
+            
+            # Create inline keyboard for PR with multiple rows
             {
               echo "buttons<<EOF"
-              echo "[{\"text\": \"💬 View Discussion\", \"url\": \"$pr_url\"}, {\"text\": \"View repository\", \"url\": \"https://github.com/${{ github.repository }}\"}]"
+              echo "[[{\"text\": \"💬 View Discussion\", \"url\": \"$pr_url\"}], [{\"text\": \"📦 Repository\", \"url\": \"https://github.com/${{ github.repository }}\"}, {\"text\": \"📊 Files Changed\", \"url\": \"$pr_url/files\"}]]"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Handle manual workflow dispatch
+            export custom_msg="${{ github.event.inputs.custom_message || 'Manual workflow trigger' }}"
+            
+            {
+              echo "message<<EOF"
+              echo "🎯 *Manual Workflow Trigger*"
+              echo ""
+              echo "📝 *Message:* $custom_msg"
+              echo "📦 *Repository:* [$reponame](https://github.com/${{ github.repository }})"
+              echo "👤 *Triggered by:* @$who"
+              echo "⏰ *Time:* $date"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            
+            {
+              echo "buttons<<EOF"
+              echo "[[{\"text\": \"📦 View Repository\", \"url\": \"https://github.com/${{ github.repository }}\"}, {\"text\": \"⚙️ Actions\", \"url\": \"https://github.com/${{ github.repository }}/actions\"}]]"
               echo "EOF"
             } >> "$GITHUB_OUTPUT"
           fi
@@ -126,12 +136,30 @@ jobs:
         run: |
           echo "Sending message:"
           echo "${{ needs.get_message.outputs.value }}"
-          if [ -z "${{ github.event.inputs.chatId }}" ]; then
-            export chatId="5619096601"
+          echo "Buttons:"
+          echo "${{ needs.get_message.outputs.buttons }}"
+          
+          # Determine chat ID (priority: workflow_call secret > input > default)
+          if [ -n "${{ secrets.CHAT_ID }}" ]; then
+            export chatId="${{ secrets.CHAT_ID }}"
+          elif [ -n "${{ inputs.chatId }}" ]; then
+            export chatId="${{ inputs.chatId }}"
           else
-            export chatId="${{ github.event.inputs.chatId }}"
+            export chatId="5619096601"
           fi
+          
+          echo "Sending to chat ID: $chatId"
+          
+          # Send message with inline keyboard
           curl -X POST \
               -H 'Content-Type: application/json' \
-              -d "{\"chat_id\": \"$chatId\", \"text\": $(printf '%s' '${{ needs.get_message.outputs.value }}' | jq -R -s .), \"parse_mode\": \"Markdown\", \"link_preview_options\": {\"is_disabled\": ${{ github.event.repository.private }} }, \"reply_markup\": {\"inline_keyboard\": ${{ needs.get_message.outputs.buttons }} } }" \
+              -d "{
+                \"chat_id\": \"$chatId\",
+                \"text\": $(printf '%s' '${{ needs.get_message.outputs.value }}' | jq -R -s .),
+                \"parse_mode\": \"Markdown\",
+                \"link_preview_options\": {\"is_disabled\": ${{ github.event.repository.private }}},
+                \"reply_markup\": {
+                  \"inline_keyboard\": ${{ needs.get_message.outputs.buttons }}
+                }
+              }" \
               https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_API }}/sendMessage
