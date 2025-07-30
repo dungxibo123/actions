@@ -13,7 +13,7 @@ on:
         required: false
         default: 5619096601
     branches:
-      "*"
+      - "*"
   pull_request:
     inputs:
       chatId:
@@ -33,118 +33,91 @@ on:
         required: false
         default: 5619096601
 
-
 jobs:
   get_message:
     runs-on: ubuntu-latest
     outputs:
       value: ${{ steps.stringify.outputs.message }}
+      buttons: ${{ steps.stringify.outputs.buttons }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Get the message
         id: stringify
         run: |
-            export date=$(date '+%d/%m/%Y %H:%M:%S')
-            export reponame=${{ github.repository }}
-            export who=${{ github.triggering_actor }}
-            export event=$(echo ${{ github.event_name }} | tr '[:lower:]' '[:upper:]')
+          export date=$(date '+%d/%m/%Y %H:%M:%S')
+          export reponame=${{ github.repository }}
+          export who=${{ github.triggering_actor }}
+          export event=$(echo ${{ github.event_name }} | tr '[:lower:]' '[:upper:]')
+          
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # Handle PUSH events
+            export branch=${GITHUB_REF#refs/heads/}
+            export commit_msg=$(git log -1 --pretty=format:'%s')
+            export commit_hash=$(git log -1 --pretty=format:'%h')
             
-            if [ "${{ github.event_name }}" = "push" ]; then
-              # Handle PUSH events
-              export branch=${GITHUB_REF#refs/heads/}
-              export commit_msg=$(git log -1 --pretty=format:'%s')
-              export commit_hash=$(git log -1 --pretty=format:'%h')
-              
-              {
-                echo "message<<EOF"
-                echo "📢 *Repository Update Alert*"
-                echo ""
-                echo "🔹 *Event:* $event"
-                echo "🔹 *Repository:* [$reponame](https://github.com/${{ github.repository }})"
-                echo "🔹 *Branch:* \`$branch\`"
-                echo "🔹 *Triggered by:* @$who"
-                echo "🔹 *Time:* $date"
-                echo "🔹 *Commit:* \`$commit_hash\` - $commit_msg"
-                echo ""
-                echo "EOF"
-              } >> "$GITHUB_OUTPUT"
-              {
-                echo "buttons<<EOF"
-                echo "[{\"text\": \"💬 View Changes\", \"url\": \"https://github.com/${{ github.repository }}/commit/${{ github.sha }}\"}, {\"text\": \"View repository\", \"url\": \"https://github.com/${{ github.repository }}\"}]"
-                echo ""
-                echo "EOF"
-              } >> "$GITHUB_OUTPUT"
-              
-            elif [ "${{ github.event_name }}" = "pull_request" ]; then
-              # Handle PULL REQUEST events
-              export pr_action="${{ github.event.action }}"
-              export pr_number="${{ github.event.pull_request.number }}"
-              export pr_title="${{ github.event.pull_request.title }}"
-              export pr_author="${{ github.event.pull_request.user.login }}"
-              export from_branch="${{ github.event.pull_request.head.ref }}"
-              export to_branch="${{ github.event.pull_request.base.ref }}"
-              export pr_url="${{ github.event.pull_request.html_url }}"
-              
-              # Get PR labels/tags
-              pr_labels=$(echo '${{ toJson(github.event.pull_request.labels) }}' | jq -r '.[].name' | tr '\n' ',' | sed 's/,$//')
-              if [ -z "$pr_labels" ]; then
-                pr_labels="None"
-              fi
-              
-              # Get list of commits in the PR
-              commit_list=$(echo '${{ toJson(github.event.pull_request.commits_url) }}' | sed 's/"//g')
-              commits_info="Loading commits..."
-              
-              {
-                echo "message<<EOF"
-                echo "🔄 *Pull Request ${pr_action^}*"
-                echo ""
-                echo "🔹 *PR #$pr_number:* $pr_title"
-                echo "🔹 *Repository:* [$reponame](https://github.com/${{ github.repository }})"
-                echo "🔹 *Author:* @$pr_author"
-                echo "🔹 *Action:* ${pr_action^}"
-                echo "🔹 *From:* \`$from_branch\` → \`$to_branch\`"
-                echo "🔹 *Labels:* $pr_labels"
-                echo "🔹 *Time:* $date"
-                echo ""
-                echo "📝 *Recent Commits:*"
-                # Get recent commits from the PR
-                git log --oneline ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} --max-count=5 | while read line; do
-                  echo "  • $line"
-                done
-                echo ""
-                echo "EOF"
-              } >> "$GITHUB_OUTPUT"
-              {
-                echo "buttons<<EOF"
-                echo "[{\"text\": \"💬 View Discussion\", \"url\": \"$pr_url\"}, {\"text\": \"View repository\", \"url\": \"https://github.com/${{ github.repository }}\"}]"
-                echo ""
-                echo "EOF"
-              } >> "$GITHUB_OUTPUT"
-
-#              {
-#                echo "buttons<<EOF"
-#                echo "🔄 *Pull Request ${pr_action^}*"
-#                echo ""
-#                echo "🔹 *PR #$pr_number:* $pr_title"
-#                echo "🔹 *Repository:* [$reponame](https://github.com/${{ github.repository }})"
-#                echo "🔹 *Author:* @$pr_author"
-#                echo "🔹 *Action:* ${pr_action^}"
-#                echo "🔹 *From:* \`$from_branch\` → \`$to_branch\`"
-#                echo "🔹 *Labels:* $pr_labels"
-#                echo "🔹 *Time:* $date"
-#                echo ""
-#                echo "📝 *Recent Commits:*"
-#                # Get recent commits from the PR
-#                git log --oneline ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} --max-count=5 | while read line; do
-#                  echo "  • $line"
-#                done
-#                echo ""
-#                echo "[💬 View Discussion]($pr_url)"
-#                echo "EOF"
-#              } >> "$GITHUB_OUTPUT"
+            {
+              echo "message<<EOF"
+              echo "📢 *Repository Update Alert*"
+              echo ""
+              echo "🔹 *Event:* $event"
+              echo "🔹 *Repository:* [$reponame](https://github.com/${{ github.repository }})"
+              echo "🔹 *Branch:* \`$branch\`"
+              echo "🔹 *Triggered by:* @$who"
+              echo "🔹 *Time:* $date"
+              echo "🔹 *Commit:* \`$commit_hash\` - $commit_msg"
+              echo ""
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            {
+              echo "buttons<<EOF"
+              echo "[{\"text\": \"💬 View Changes\", \"url\": \"https://github.com/${{ github.repository }}/commit/${{ github.sha }}\"}, {\"text\": \"View repository\", \"url\": \"https://github.com/${{ github.repository }}\"}]"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            # Handle PULL REQUEST events
+            export pr_action="${{ github.event.action }}"
+            export pr_number="${{ github.event.pull_request.number }}"
+            export pr_title="${{ github.event.pull_request.title }}"
+            export pr_author="${{ github.event.pull_request.user.login }}"
+            export from_branch="${{ github.event.pull_request.head.ref }}"
+            export to_branch="${{ github.event.pull_request.base.ref }}"
+            export pr_url="${{ github.event.pull_request.html_url }}"
+            
+            # Get PR labels/tags
+            pr_labels=$(echo '${{ toJson(github.event.pull_request.labels) }}' | jq -r '.[].name' | tr '\n' ',' | sed 's/,$//')
+            if [ -z "$pr_labels" ]; then
+              pr_labels="None"
             fi
+            
+            {
+              echo "message<<EOF"
+              echo "🔄 *Pull Request ${pr_action^}*"
+              echo ""
+              echo "🔹 *PR #$pr_number:* $pr_title"
+              echo "🔹 *Repository:* [$reponame](https://github.com/${{ github.repository }})"
+              echo "🔹 *Author:* @$pr_author"
+              echo "🔹 *Action:* ${pr_action^}"
+              echo "🔹 *From:* \`$from_branch\` → \`$to_branch\`"
+              echo "🔹 *Labels:* $pr_labels"
+              echo "🔹 *Time:* $date"
+              echo ""
+              echo "📝 *Recent Commits:*"
+              # Get recent commits from the PR
+              git log --oneline ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} --max-count=5 | while read line; do
+                echo "  • $line"
+              done
+              echo ""
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            {
+              echo "buttons<<EOF"
+              echo "[{\"text\": \"💬 View Discussion\", \"url\": \"$pr_url\"}, {\"text\": \"View repository\", \"url\": \"https://github.com/${{ github.repository }}\"}]"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
   send_notification:
     needs: get_message
     runs-on: ubuntu-latest
