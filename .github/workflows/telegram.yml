@@ -124,5 +124,5 @@ jobs:
           fi
           curl -X POST \
               -H 'Content-Type: application/json' \
-              -d "{\"chat_id\": \"$chatId\", \"text\": $(printf '%s' '${{ needs.get_message.outputs.value }}' | jq -R -s .), \"parse_mode\": \"Markdown\"}" \
+              -d "{\"chat_id\": \"$chatId\", \"text\": $(printf '%s' '${{ needs.get_message.outputs.value }}' | jq -R -s .), \"parse_mode\": \"Markdown\", \"link_preview_options\": {\"is_disabled\": ${{ github.event.repository.private }} }}" \
               https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_API }}/sendMessage
