@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       value: ${{ steps.set_output.outputs.message }}
+      test_value: ${{ steps.set_output.value_to_expose }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,6 +23,7 @@ jobs:
             export who=${{ github.triggering_actor }}
             export event=${{ github.event }}
             echo -e "message=There is a $event on $reponame, which is triggered by $who at $date" >> "$GITHUB_OUTPUT"
+            echo "value_to_expose=hello_world" >> "$GITHUB_OUTPUT"
             
 
   display_branch:
@@ -37,7 +39,7 @@ jobs:
           echo "${{ needs.get_message.outputs.value }}"
           curl -X POST \
               -H 'Content-Type: application/json' \
-              -d '{"chat_id": "5619096601", "text": "${{ needs.get_message.outputs.value }}"}' \
+              -d '{"chat_id": "5619096601", "text": "${{ needs.get_message.outputs.test_value }}"}' \
               https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_API }}/sendMessage 
 
 
