@@ -21,7 +21,7 @@ jobs:
             export reponame=${{ github.repository }}
             export who=${{ github.triggering_actor }}
             export event=${{ github.event }}
-            echo "message=There is a $event on $reponame, which is triggered by $who at $date" >> $GITHUB_OUTPUT
+            echo -e "message=There is a $event on $reponame, which is triggered by $who at $date" >> "$GITHUB_OUTPUT"
             
 
   display_branch:
