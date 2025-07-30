@@ -17,33 +17,29 @@ jobs:
       - name: Get the message
         id: stringify
         run: |
-            export date=$(date '+%d/%m/%Y %H:%M:%S')
-            export reponame=${{ github.repository }}
-            export who=${{ github.triggering_actor }}
-            export event=$(echo ${{ github.event_name }} | tr '[:lower:]' '[:upper:]')
-            export branch=${GITHUB_REF#refs/heads/}
-            export commit_msg=$(git log -1 --pretty=format:'%s')
-            export commit_hash=$(git log -1 --pretty=format:'%h')
-            
-            # Create multi-line message in a single variable
-            message="📢 *Repository Update Alert*
-            
-🔹 *Event:* $event
-🔹 *Repository:* [$reponame](https://github.com/${{ github.repository }})
-🔹 *Branch:* \`$branch\`
-🔹 *Triggered by:* @$who
-🔹 *Time:* $date
-🔹 *Commit:* \`$commit_hash\` - $commit_msg
-
-[View Changes](https://github.com/${{ github.repository }}/commit/${{ github.sha }})"
-            
-            # Use printf to handle multi-line properly and escape for GitHub Output
-            {
-              echo "message<<EOF"
-              printf "%s" "$message"
-              echo ""
-              echo "EOF"
-            } >> "$GITHUB_OUTPUT"
+          export date=$(date '+%d/%m/%Y %H:%M:%S')
+          export reponame=${{ github.repository }}
+          export who=${{ github.triggering_actor }}
+          export event=$(echo ${{ github.event_name }} | tr '[:lower:]' '[:upper:]')
+          export branch=${GITHUB_REF#refs/heads/}
+          export commit_msg=$(git log -1 --pretty=format:'%s')
+          export commit_hash=$(git log -1 --pretty=format:'%h')
+          
+          # Create multi-line message and write to GitHub Output
+          {
+            echo "message<<EOF"
+            echo "📢 *Repository Update Alert*"
+            echo ""
+            echo "🔹 *Event:* $event"
+            echo "🔹 *Repository:* [$reponame](https://github.com/${{ github.repository }})"
+            echo "🔹 *Branch:* \`$branch\`"
+            echo "🔹 *Triggered by:* @$who"
+            echo "🔹 *Time:* $date"
+            echo "🔹 *Commit:* \`$commit_hash\` - $commit_msg"
+            echo ""
+            echo "[View Changes](https://github.com/${{ github.repository }}/commit/${{ github.sha }})"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
   send_notification:
     needs: get_message
