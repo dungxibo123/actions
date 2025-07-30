@@ -9,7 +9,6 @@ on:
 jobs:
   display_branch:
     runs-on: ubuntu-latest
-    secrets: inherit
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -21,7 +20,7 @@ jobs:
           echo "The current branch is: ${{ github.ref_name }}"
           curl -X POST \
               -H 'Content-Type: application/json' \
-              -d '{"chat_id": "5619096601", "text": "Hello from your bot!"}' \
+              -d '{"chat_id": "5619096601", "text": "Hello <(\") from your bot!"}' \
               https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_API }}/sendMessage 
 
 
