@@ -7,6 +7,23 @@ on:
       - "*"
 
 jobs:
+  get_message:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get the message
+        outputs:
+          value: ${{ steps.set_output.outputs.value }}
+        run: |
+            export date=$(date '+%d/%m/%Y %H:%M:%S)
+            export reponame=${{ github.repository }}
+            export who=${{ github.triggering_actor }}
+            export event=${{ github.event }}
+            echo 'message=There is a $event on $reponame, which is triggered by $who at $date' >> $GITHUB_ACTION
+            
+
   display_branch:
     runs-on: ubuntu-latest
     steps:
@@ -17,11 +34,10 @@ jobs:
         env:
           SUPER_SECRET: "test"
         run: | 
-          echo "The current branch is: ${{ github.ref_name }}"
-          export NOTIFICATION_STRING="test 1"
+          echo "${{ needs.get_message.outputs.value }}"
           curl -X POST \
               -H 'Content-Type: application/json' \
-              -d '{"chat_id": "5619096601", "text": "$env:NOTIFICATION_STRING"}' \
+              -d '{"chat_id": "5619096601", "text": "${{ needs.get_message.outputs.value }}"}' \
               https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_API }}/sendMessage 
 
 
