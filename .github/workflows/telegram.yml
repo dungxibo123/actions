@@ -21,6 +21,13 @@ on:
         required: false
         default: 5619096601
     types: [opened, closed, reopened, synchronize]
+  workflow_call:
+    inputs:
+      chatId:
+        type: number
+        required: false
+        default: 5619096601
+
 
 jobs:
   get_message:
@@ -110,8 +117,12 @@ jobs:
         run: |
           echo "Sending message:"
           echo "${{ needs.get_message.outputs.value }}"
-          
+          if [[ -z "${{ github.event.inputs.chatId }}"]]; then
+            export chatId="5619096601"
+          else
+            export chatId="${{ github.event.inputs.chatId }}"
+          fi
           curl -X POST \
               -H 'Content-Type: application/json' \
-              -d "{\"chat_id\": \"${{ github.event.inputs.chatId }}\", \"text\": $(printf '%s' '${{ needs.get_message.outputs.value }}' | jq -R -s .), \"parse_mode\": \"Markdown\"}" \
+              -d "{\"chat_id\": \"$chatId\", \"text\": $(printf '%s' '${{ needs.get_message.outputs.value }}' | jq -R -s .), \"parse_mode\": \"Markdown\"}" \
               https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_API }}/sendMessage
