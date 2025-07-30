@@ -10,7 +10,7 @@ jobs:
   get_message:
     runs-on: ubuntu-latest
     outputs:
-      value: ${{ steps.set_output.outputs.value }}
+      value: ${{ steps.set_output.outputs.message }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
