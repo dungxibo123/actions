@@ -9,13 +9,13 @@ on:
 jobs:
   get_message:
     runs-on: ubuntu-latest
+    outputs:
+      value: ${{ steps.set_output.outputs.value }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Get the message
-        outputs:
-          value: ${{ steps.set_output.outputs.value }}
         run: |
             export date=$(date '+%d/%m/%Y %H:%M:%S)
             export reponame=${{ github.repository }}
