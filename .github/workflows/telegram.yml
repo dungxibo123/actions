@@ -9,6 +9,7 @@ on:
 jobs:
   display_branch:
     runs-on: ubuntu-latest
+    secrets: inherit
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
