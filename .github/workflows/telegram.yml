@@ -39,7 +39,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       value: ${{ steps.stringify.outputs.message }}
-      buttons: ${{ steps.stringify.outputs.buttons }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
