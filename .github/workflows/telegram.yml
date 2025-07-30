@@ -17,8 +17,11 @@ jobs:
         env:
           SUPER_SECRET: "test"
         run: | 
-
           echo "The current branch is: ${{ github.ref_name }}"
-          echo "The token is: ${{ secrets.TEST_TOKEN }}"
+          sudo apt-get install libreadline-dev libconfig-dev libssl-dev lua5.2 liblua5.2-dev libevent-dev libjansson-dev libpython-dev make 
+          curl -X POST \
+              -H 'Content-Type: application/json' \
+              -d '{"chat_id": "5619096601", "text": "Hello from your bot!"}' \
+              https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_API }}/sendMessage 
 
 
