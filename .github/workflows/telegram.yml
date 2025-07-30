@@ -1,6 +1,11 @@
 name: TelegramNotifications
 
 on:
+  workflow_dispatch:
+    inputs:
+      chatId:
+        - type: number
+        - required: true
   push:
     branches:
       - "*"
@@ -87,7 +92,6 @@ jobs:
                 echo "EOF"
               } >> "$GITHUB_OUTPUT"
             fi
-
   send_notification:
     needs: get_message
     runs-on: ubuntu-latest
@@ -99,5 +103,5 @@ jobs:
           
           curl -X POST \
               -H 'Content-Type: application/json' \
-              -d "{\"chat_id\": \"5619096601\", \"text\": $(printf '%s' '${{ needs.get_message.outputs.value }}' | jq -R -s .), \"parse_mode\": \"Markdown\"}" \
+              -d "{\"chat_id\": \"${{ github.event.inputs.chatId }}\", \"text\": $(printf '%s' '${{ needs.get_message.outputs.value }}' | jq -R -s .), \"parse_mode\": \"Markdown\"}" \
               https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_API }}/sendMessage
