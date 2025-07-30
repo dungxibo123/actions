@@ -117,7 +117,7 @@ jobs:
         run: |
           echo "Sending message:"
           echo "${{ needs.get_message.outputs.value }}"
-          if [[ -z "${{ github.event.inputs.chatId }}"]]; then
+          if [ -z "${{ github.event.inputs.chatId }}" ]; then
             export chatId="5619096601"
           else
             export chatId="${{ github.event.inputs.chatId }}"
