@@ -24,10 +24,8 @@ on:
   workflow_call:
     secrets:
       TELEGRAM_BOT_API:
-        type: string
         required: true
       CHAT_ID:
-        type: number
         required: false
     inputs:
       chatId:
