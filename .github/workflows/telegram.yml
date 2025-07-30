@@ -27,6 +27,7 @@ on:
         type: number
         required: false
         default: 5619096601
+    secrets: inherit
 
 
 jobs:
