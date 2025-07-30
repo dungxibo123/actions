@@ -27,6 +27,7 @@ jobs:
             
 
   display_branch:
+    needs: get_message
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
