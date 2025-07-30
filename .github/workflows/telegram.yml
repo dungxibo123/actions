@@ -21,7 +21,7 @@ jobs:
             export date=$(date '+%d/%m/%Y %H:%M:%S')
             export reponame=${{ github.repository }}
             export who=${{ github.triggering_actor }}
-            export event=${{ github.event }}
+            export event=${{ github.event_name }}
             echo -e "message=There is a $event on $reponame, which is triggered by $who at $date" >> "$GITHUB_OUTPUT"
             
 
@@ -34,7 +34,7 @@ jobs:
 
       - name: Display current branch name
         run: | 
-          echo "${{ needs.get_message.outputs.test_value }}"
+          echo "${{ needs.get_message.outputs.value }}"
           curl -X POST \
               -H 'Content-Type: application/json' \
               -d '{"chat_id": "5619096601", "text": "${{ needs.get_message.outputs.value }}"}' \
